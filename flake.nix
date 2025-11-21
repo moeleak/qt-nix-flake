@@ -42,14 +42,14 @@
             ];
 
             # Runtime dependencies (Libraries)
-            buildInputs = with pkgs.qt6; [
+            buildInputs = (with pkgs.qt6; [
               qtbase
               qtdeclarative
               qtsvg
               qttools
               qt5compat
-              qtwayland
-            ];
+            ])
+            ++ (if pkgs.stdenv.isLinux then [ pkgs.qt6.qtwayland ] else []);
           };
         }
       );
