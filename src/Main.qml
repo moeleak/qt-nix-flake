@@ -5,10 +5,14 @@ import QtQuick.Layouts
 
 ApplicationWindow {
     id: win
+    property int layoutMargin: 32
+
     width: 720
     height: 500
-    minimumWidth: 720
-    minimumHeight: 500
+
+    minimumWidth: rootLayout.implicitWidth + layoutMargin * 2
+    minimumHeight: rootLayout.implicitHeight + layoutMargin * 2 + (appMenuBar ? appMenuBar.implicitHeight : 0)
+
     visible: true
     title: backend.windowTitle
 
@@ -16,25 +20,46 @@ ApplicationWindow {
     Material.primary: Material.Blue
     Material.accent: Material.Pink
 
+    Action { id: openDialogAction; text: qsTr("Show Status Dialog"); onTriggered: statusDialog.open() }
+    Action { id: openDrawerAction; text: qsTr("Toggle Drawer"); onTriggered: appDrawer.open() }
+
+    menuBar: MenuBar {
+        id: appMenuBar
+        Menu {
+            title: qsTr("View")
+            MenuItem { action: openDialogAction }
+            MenuItem { action: openDrawerAction }
+        }
+        Menu {
+            title: qsTr("Edit")
+            MenuItem { text: qsTr("Clear Text"); onTriggered: backend.inputText = "" }
+        }
+    }
+
     RowLayout {
+        id: rootLayout
         anchors.fill: parent
-        anchors.margins: 32
+        anchors.margins: layoutMargin
         spacing: 32
 
+        // ---------------- Status GroupBox ----------------
         GroupBox {
             id: statusBox
             title: qsTr("Status")
-            Layout.fillWidth: true
-            Layout.minimumWidth: 220
-            Layout.preferredWidth: 280
-            Layout.fillHeight: true
-            implicitHeight: statusColumn.implicitHeight + topPadding + bottomPadding
-            clip: true
 
-            Column {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumWidth: 200
+            Layout.preferredWidth: 280
+            Layout.minimumHeight: implicitHeight
+            Layout.alignment: Qt.AlignTop
+
+            ColumnLayout {
                 id: statusColumn
-                anchors.fill: parent
-                anchors.margins: 16
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+
                 spacing: 12
 
                 Label {
@@ -42,44 +67,49 @@ ApplicationWindow {
                     font.pixelSize: 20
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
-                    width: parent.width
+
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 200
                 }
             }
         }
 
+        // ---------------- Controls GroupBox ----------------
         GroupBox {
             id: controlBox
             title: qsTr("Controls")
-            Layout.fillWidth: true
-            Layout.minimumWidth: 260
-            Layout.preferredWidth: 360
-            Layout.fillHeight: true
-            Layout.minimumHeight: 350
-            implicitHeight: controlColumn.implicitHeight + topPadding + bottomPadding
-            clip: true
 
-            Column {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumWidth: 250
+            Layout.preferredWidth: 360
+            Layout.minimumHeight: implicitHeight
+            Layout.alignment: Qt.AlignTop
+
+            ColumnLayout {
                 id: controlColumn
-                anchors.fill: parent
-                anchors.margins: 16
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+
                 spacing: 12
 
                 Button {
                     text: backend.buttonLabel
                     onClicked: backend.handleButtonClicked()
-                    width: parent.width
+                    Layout.fillWidth: true
                 }
 
                 Slider {
                     from: 0
                     to: 100
                     value: backend.sliderValue
-                    width: parent.width
+                    Layout.fillWidth: true
                     onMoved: backend.sliderValue = value
                 }
 
                 ComboBox {
-                    width: parent.width
+                    Layout.fillWidth: true
                     model: ["Option 1", "Option 2", "Option 3"]
                     currentIndex: backend.comboIndex
                     onActivated: backend.comboIndex = currentIndex
@@ -92,11 +122,70 @@ ApplicationWindow {
                 }
 
                 TextField {
-                    width: parent.width
+                    Layout.fillWidth: true
                     placeholderText: qsTr("Enter text")
                     text: backend.inputText
                     onTextEdited: backend.inputText = text
                 }
+
+                Button {
+                    Layout.fillWidth: true
+                    text: qsTr("Show Dialog")
+                    onClicked: openDialogAction.trigger()
+                }
+
+                Button {
+                    Layout.fillWidth: true
+                    text: qsTr("Open Drawer")
+                    onClicked: openDrawerAction.trigger()
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: statusDialog
+        title: qsTr("Status Details")
+        modal: true
+        standardButtons: Dialog.Ok
+        x: (win.width - width) / 2
+        y: (win.height - height) / 2
+        contentItem: Column {
+            spacing: 12
+            Label {
+                text: backend.statusText
+                wrapMode: Text.WordWrap
+                width: 300
+            }
+            TextArea {
+                width: 300
+                readOnly: true
+                text: qsTr("Current input: %1").arg(backend.inputText)
+            }
+        }
+    }
+
+    Drawer {
+        id: appDrawer
+        width: Math.min(280, win.width * 0.6)
+        height: win.height
+        modal: true
+        interactive: true
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 24
+            spacing: 16
+            Label {
+                text: qsTr("Quick Actions")
+                font.pixelSize: 20
+            }
+            Button {
+                text: qsTr("Toggle Feature")
+                onClicked: backend.featureEnabled = !backend.featureEnabled
+            }
+            Button {
+                text: qsTr("Close Drawer")
+                onClicked: appDrawer.close()
             }
         }
     }
